@@ -20,9 +20,12 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal("Failed loading config: ", err)
+	}
 
-	logger.Info("Starting Auth Service...")
+	logger.Info("Starting Auth Service on Port " + cfg.Port)
 
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
