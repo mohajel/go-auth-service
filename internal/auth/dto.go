@@ -1,27 +1,23 @@
 package auth
 
-type RegisterRequest struct {
-    Username string
-    Password string
+type ProfileResponse struct {
+	ID       string
+	Username string
 	Email    string
+}
+
+type RegisterRequest struct {
+	Username string
+	Email    string
+	Password string
 }
 
 type LoginRequest struct {
-    Username string
-    Password string
-	Email    string
+	Username string
+	Password string
 }
 
-type ProfileResponse struct {
-    ID       string
-    Username string
-}
-
-type RefreshRequest struct {
-    RefreshToken string
-}
-
-type TokenResponse struct {
-    AccessToken  string
-    RefreshToken string
+type LoginResponse struct {
+	AccessToken  string
+	RefreshToken string
 }
