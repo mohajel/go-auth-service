@@ -3,9 +3,11 @@ package user
 import (
 	"context"
 	"errors"
+	"go-auth-service/pkg/logger"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Repository interface {
@@ -19,8 +21,26 @@ type mongoRepo struct {
 }
 
 func NewMongoRepo(db *mongo.Database) Repository {
+	collection := db.Collection("users")
+
+	indexes := []mongo.IndexModel{
+		{
+			Keys:    bson.M{"username": 1},
+			Options: options.Index().SetUnique(true),
+		},
+		{
+			Keys:    bson.M{"email": 1},
+			Options: options.Index().SetUnique(true),
+		},
+	}
+
+	_, err := collection.Indexes().CreateMany(context.Background(), indexes)
+	if err != nil {
+		logger.Error("failed to create user indexes: " + err.Error())
+	}
+
 	return &mongoRepo{
-		collection: db.Collection("users"),
+		collection: collection,
 	}
 }
 
