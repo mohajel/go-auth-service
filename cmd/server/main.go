@@ -11,19 +11,22 @@ import (
 	"go-auth-service/internal/redis"
 	"go-auth-service/internal/token"
 	"go-auth-service/internal/user"
-	"go-auth-service/pkg/logger"
+	"go-auth-service/pkg/logtool"
 
 	"github.com/gin-gonic/gin"
+	r "github.com/redis/go-redis/v9"
 	mgo "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	r "github.com/redis/go-redis/v9"
 )
 
+func init() {
+}
+
 func main() {
+	logtool.Init("auth-service", true)
 	cfg := config.Load()
 
-	logger.Info("Starting Auth Service...")
-
+	logtool.Info("Starting Auth Service...", "port", cfg.Port)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -50,10 +53,14 @@ func main() {
 	authService := auth.NewService(userRepo, tokenManager, nc, redisRepo)
 	authHandler := auth.NewHandler(authService)
 
-	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(logtool.GinZapLogger())
+	router.Use(gin.Recovery())
+
 	authHandler.RegisterRoutes(router)
 
-	logger.Info("Auth service running on port " + cfg.Port)
+	logtool.Info("Auth service running on port " + cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}

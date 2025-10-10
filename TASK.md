@@ -102,7 +102,7 @@ Build a **high-performance, reliable authentication system** with **Go** using *
 - **CI/CD:**  
   - Pipeline should run `go test` on every push.  
 - **Environment:**  
-  - Use `.env.test` for tests (not committed to repo).  
+  - Use `.env.example` for tests (not committed to repo).  
 
 ---
 
