@@ -36,7 +36,7 @@ func main() {
 	rdb := r.NewClient(&r.Options{
 		Addr: cfg.RedisURL,
 	})
-	if err := rdb.Ping(ctx).Err(); err != nil {
+	if err := rdb.Ping(ctx).Err(); err != nil { 
 		log.Fatal("Redis connect error:", err)
 	}
 
