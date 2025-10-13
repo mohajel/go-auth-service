@@ -3,21 +3,44 @@ package nats
 import (
 	"github.com/nats-io/nats.go"
 	"go-auth-service/pkg/logger"
+	"time"
 )
 
-func SubscribeUserRegistered(nc *nats.Conn) {
-	if nc == nil {
-		logger.Error("NATS connection is nil, cannot subscribe to user.registered")
+func SubscribeUserRegistered(js nats.JetStreamContext) {
+	if js == nil {
+		logger.Error("JetStream context is nil")
 		return
 	}
 
-	_, err := nc.Subscribe("user.registered", func(m *nats.Msg) {
-		logger.Info("Received user.registered event: " + string(m.Data))
-	})
+	_, err := js.Subscribe("user.registered", func(m *nats.Msg) {
+		logger.Info("Received user.registered: " + string(m.Data))
+		m.Ack()
+	}, nats.Durable("user-reg-durable"), nats.DeliverAll(), nats.ManualAck())
+
 	if err != nil {
-		logger.Error("Failed to subscribe to user.registered: " + err.Error())
+		logger.Error("Failed to subscribe: " + err.Error())
 		return
 	}
 
-	logger.Info("Subscribed to user.registered event")
+	logger.Info("Subscribed to user.registered")
+}
+
+func SubscribeQueue(js nats.JetStreamContext, group string) {
+	if js == nil {
+		logger.Error("JetStream context is nil")
+		return
+	}
+
+	_, err := js.QueueSubscribe("user.registered", group, func(m *nats.Msg) {
+		logger.Info(group + "received: " + string(m.Data))
+		time.Sleep(2 * time.Second)
+		m.Ack()
+	}, nats.Durable("worker-durable-"+group), nats.ManualAck(), nats.AckWait(30*time.Second))
+
+	if err != nil {
+		logger.Error("Failed to subscribe queue: " + err.Error())
+		return
+	}
+
+	logger.Info("Queue subscriber started for group: " + group)
 }
