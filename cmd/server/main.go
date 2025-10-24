@@ -7,7 +7,7 @@ import (
 
 	"go-auth-service/config"
 	"go-auth-service/internal/auth"
-	"go-auth-service/internal/nats"
+	appnats "go-auth-service/internal/nats"
 	"go-auth-service/internal/redis"
 	"go-auth-service/internal/token"
 	"go-auth-service/internal/user"
@@ -20,9 +20,9 @@ import (
 )
 
 func main() {
-	// Load configuration
+	// --- Load Config ---
 	cfg := config.Load()
-	logger.Info("Config loaded")
+	logger.Info("✅ Config loaded")
 	logger.Info("Starting Auth Service...")
 
 	// --- MongoDB ---
@@ -33,43 +33,38 @@ func main() {
 		log.Fatal("Mongo connect error:", err)
 	}
 	db := mongoClient.Database("authdb")
-	logger.Info("Connected to MongoDB")
+	logger.Info("✅ Connected to MongoDB")
 
 	// --- Redis ---
 	rdb := r.NewClient(&r.Options{Addr: cfg.RedisURL})
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Fatal("Redis connect error:", err)
 	}
-	logger.Info("Connected to Redis")
+	logger.Info("✅ Connected to Redis")
 
 	// --- NATS ---
-	nc := nats.Connect(cfg.NatsURL)
+	nc := appnats.Connect(cfg.NatsURL)
 	if nc == nil {
-		log.Fatal("Failed to connect to NATS")
+		log.Fatal("❌ Failed to connect to NATS")
 	}
 	defer nc.Close()
 
 	js, err := nc.JetStream()
 	if err != nil || js == nil {
-		log.Fatal("Failed to get JetStream context:", err)
+		log.Fatal("❌ Failed to get JetStream context:", err)
 	}
 
-	// Create Stream
-	nats.EnsureStream(js)
+	appnats.EnsureStream(js)
 
-	// --- Subscriber ---
-	subscriberReady := make(chan bool)
+	// --- Subscribers ---
 	go func() {
-		nats.SubscribeUserRegistered(js)
-		// Queue group example (optional)
-		nats.SubscribeQueue(js, "worker-group-1")
-		nats.SubscribeQueue(js, "worker-group-2")
-		subscriberReady <- true
+		appnats.SubscribeUserRegistered(js)
+		appnats.SubscribeQueue(js, "worker-group-1")
+		appnats.SubscribeQueue(js, "worker-group-2")
 	}()
-	<-subscriberReady
 
-	// --- Publish test message ---
-	nats.PublishUserRegistered(js, "user-123")
+	// --- Test Publish ---
+	appnats.PublishUserRegistered(js, "user-123")
 
 	// --- Repositories ---
 	userRepo := user.NewMongoRepo(db)
@@ -82,7 +77,7 @@ func main() {
 	authService := auth.NewService(userRepo, tokenManager, nc, redisRepo)
 	authHandler := auth.NewHandler(authService)
 
-	// --- Router ---
+	// --- Gin Router ---
 	router := gin.Default()
 	authHandler.RegisterRoutes(router)
 

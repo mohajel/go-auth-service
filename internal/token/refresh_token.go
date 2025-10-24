@@ -1,11 +1,12 @@
 package token
 
-func GenerateRefresh(userID string) string {
-    // TODO: Generate secure refresh token
-    return ""
-}
+import (
+	"crypto/rand"
+	"encoding/base64"
+)
 
-func ValidateRefresh(token string) (string, error) {
-    // TODO: Validate refresh token and return userID
-    return "", nil
+func GenerateRefreshToken() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
