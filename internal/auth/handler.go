@@ -91,7 +91,6 @@ func (h *Handler) Logout(c *gin.Context) {
 }
 
 func (h *Handler) Profile(c *gin.Context) {
-	// Extract bearer token
 	auth := c.GetHeader("Authorization")
 	if auth == "" {
 		c.JSON(401, gin.H{"error": "missing authorization header"})
@@ -106,7 +105,6 @@ func (h *Handler) Profile(c *gin.Context) {
 
 	tokenString := parts[1]
 
-	// Validate token using service's token manager
 	userID, err := h.service.tokenManager.Validate(tokenString)
 	if err != nil {
 		c.JSON(401, gin.H{"error": err.Error()})

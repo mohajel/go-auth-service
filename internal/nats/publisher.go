@@ -1,17 +1,25 @@
 package nats
 
 import (
-	"github.com/nats-io/nats.go"
+	"fmt"
 	"go-auth-service/pkg/logger"
+
+	"github.com/nats-io/nats.go"
 )
 
-func PublishUserRegistered(js nats.JetStreamContext, userID string) {
+func PublishUserRegistered(js nats.JetStreamContext, userID string) error {
+	if js == nil {
+		return fmt.Errorf("JetStream context is nil")
+	}
+
 	_, err := js.Publish("user.registered", []byte(userID))
 	if err != nil {
 		logger.Error("Failed to publish user.registered: " + err.Error())
-		return
+		return fmt.Errorf("failed to publish: %v", err)
 	}
+
 	logger.Info("Published user.registered for user " + userID)
+	return nil
 }
 
 func PublishUserLoggedOut(js nats.JetStreamContext, userID string) {

@@ -14,9 +14,9 @@ import (
 	"go-auth-service/pkg/logger"
 
 	"github.com/gin-gonic/gin"
+	r "github.com/redis/go-redis/v9"
 	mgo "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	r "github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -54,17 +54,25 @@ func main() {
 		log.Fatal("❌ Failed to get JetStream context:", err)
 	}
 
-	appnats.EnsureStream(js)
+	if err := appnats.EnsureStream(js); err != nil {
+		log.Fatal("❌ Failed to ensure NATS stream:", err)
+	}
 
 	// --- Subscribers ---
 	go func() {
+		// Wait a bit for stream to be fully ready
+		time.Sleep(1 * time.Second)
 		appnats.SubscribeUserRegistered(js)
 		appnats.SubscribeQueue(js, "worker-group-1")
 		appnats.SubscribeQueue(js, "worker-group-2")
 	}()
 
 	// --- Test Publish ---
-	appnats.PublishUserRegistered(js, "user-123")
+	// Wait a bit for subscribers to be ready
+	time.Sleep(2 * time.Second)
+	if err := appnats.PublishUserRegistered(js, "user-123"); err != nil {
+		logger.Error("Failed to publish test message: " + err.Error())
+	}
 
 	// --- Repositories ---
 	userRepo := user.NewMongoRepo(db)

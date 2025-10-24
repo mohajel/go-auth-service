@@ -1,37 +1,43 @@
 package nats
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	"go-auth-service/pkg/logger"
+
+	"github.com/nats-io/nats.go"
 )
 
-func EnsureStream(js nats.JetStreamContext) {
+const (
+	StreamName = "USER_EVENTS"
+)
+
+func EnsureStream(js nats.JetStreamContext) error {
 	if js == nil {
-		logger.Error("JetStream context is nil")
-		return
+		return fmt.Errorf("JetStream context is nil")
 	}
 
-	stream, err := js.StreamInfo("USER_EVENTS")
+	stream, err := js.StreamInfo(StreamName)
 	if err == nil && stream != nil {
-		logger.Info("Stream USER_EVENTS already exists")
-		return
+		logger.Info("Stream " + StreamName + " already exists")
+		return nil
 	}
 
-	_, err = js.AddStream(&nats.StreamConfig{
-		Name:      "USER_EVENTS",
-		Subjects:  []string{"user.registered", "user.logged_out"},
+	cfg := &nats.StreamConfig{
+		Name:      StreamName,
+		Subjects:  []string{"user.>"}, // wildcard for all user.* events
 		Retention: nats.LimitsPolicy,
 		Storage:   nats.FileStorage,
-		MaxAge:    24 * time.Hour, 
-	})
-
-	if err != nil {
-		logger.Error("Failed to create USER_EVENTS stream: " + err.Error())
-		return
+		MaxAge:    24 * time.Hour,
+		MaxMsgs:   1000000,
 	}
 
-	logger.Info("Stream USER_EVENTS created successfully")
-	defer js.DeleteStream("USER_EVENTS")
+	stream, err = js.AddStream(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create stream: %v", err)
+	}
+
+	logger.Info("Stream " + StreamName + " created successfully")
+	return nil
 }

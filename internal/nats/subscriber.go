@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Simple subscriber — receives every message
 func SubscribeUserRegistered(js nats.JetStreamContext) {
 	if js == nil {
 		logger.Error("❌ JetStream context is nil")
