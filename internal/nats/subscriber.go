@@ -25,7 +25,6 @@ func SubscribeUserRegistered(js nats.JetStreamContext) {
 	logger.Info("✅ Subscribed to user.registered")
 }
 
-// Queue subscriber — only one instance in the group processes each message
 func SubscribeQueue(js nats.JetStreamContext, group string) {
 	if js == nil {
 		logger.Error("❌ JetStream context is nil")
