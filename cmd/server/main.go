@@ -70,7 +70,7 @@ func main() {
 	// --- Test Publish ---
 	// Wait a bit for subscribers to be ready
 	time.Sleep(2 * time.Second)
-	if err := appnats.PublishUserRegistered(js, "user-123"); err != nil {
+	if err := appnats.PublishUserRegistered(js, "user-123", "test@example.com", "Test User"); err != nil {
 		logger.Error("Failed to publish test message: " + err.Error())
 	}
 

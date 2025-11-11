@@ -8,6 +8,7 @@ import (
 	"go-auth-service/internal/redis"
 	"go-auth-service/internal/token"
 	"go-auth-service/internal/user"
+	"go-auth-service/pkg/logger"
 
 	"os"
 
@@ -64,7 +65,10 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) error {
 		return err
 	}
 
-	appnats.PublishUserRegistered(js, newUser.ID)
+	if err := appnats.PublishUserRegistered(js, newUser.ID, newUser.Email, newUser.Username); err != nil {
+		logger.Error("Failed to publish user.registered event: " + err.Error())
+		// اما اجازه می‌دیم ثبت نام کامل شه چون event ثانویه است
+	}
 	return nil
 }
 

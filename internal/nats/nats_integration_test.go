@@ -1,11 +1,14 @@
 package nats_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats.go"
 	appnats "go-auth-service/internal/nats"
+
+	"github.com/nats-io/nats.go"
 )
 
 func TestNATSConnectionAndPublish(t *testing.T) {
@@ -21,19 +24,29 @@ func TestNATSConnectionAndPublish(t *testing.T) {
 	done := make(chan bool)
 
 	// Subscriber
+	durableName := fmt.Sprintf("test-durable-%d", time.Now().UnixNano())
 	_, err = js.Subscribe("user.registered", func(m *nats.Msg) {
-		if string(m.Data) != "test-user" {
-			t.Fatalf("unexpected message: %s", string(m.Data))
+		var ev appnats.UserRegisteredEvent
+		if err := json.Unmarshal(m.Data, &ev); err != nil {
+			t.Fatalf("failed to unmarshal message: %v", err)
+		}
+		if ev.UserID != "test-user" {
+			t.Fatalf("unexpected user id: %s", ev.UserID)
+		}
+		if ev.Email != "test@example.com" {
+			t.Fatalf("unexpected email: %s", ev.Email)
 		}
 		m.Ack()
 		done <- true
-	}, nats.Durable("test-durable"), nats.ManualAck())
+	}, nats.Durable(durableName), nats.ManualAck(), nats.DeliverNew())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Publish
-	appnats.PublishUserRegistered(js, "test-user")
+	if err := appnats.PublishUserRegistered(js, "test-user", "test@example.com", "Test User"); err != nil {
+		t.Fatal(err)
+	}
 
 	select {
 	case <-done:
