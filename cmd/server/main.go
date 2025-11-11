@@ -13,6 +13,7 @@ import (
 	"go-auth-service/internal/user"
 	"go-auth-service/pkg/logger"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	r "github.com/redis/go-redis/v9"
 	mgo "go.mongodb.org/mongo-driver/mongo"
@@ -87,6 +88,14 @@ func main() {
 
 	// --- Gin Router ---
 	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://127.0.0.1:5500"},
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	authHandler.RegisterRoutes(router)
 
 	logger.Info("Auth service running on port " + cfg.Port)
