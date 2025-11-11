@@ -11,6 +11,7 @@ type Repository interface {
 	Create(ctx context.Context, u *User) error
 	FindByUsername(ctx context.Context, username string) (*User, error)
 	FindByID(ctx context.Context, id string) (*User, error)
+	FindByEmail(ctx context.Context, email string) (*User, error)
 }
 
 type mongoRepo struct {
@@ -40,6 +41,15 @@ func (r *mongoRepo) FindByUsername(ctx context.Context, username string) (*User,
 func (r *mongoRepo) FindByID(ctx context.Context, id string) (*User, error) {
 	var user User
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *mongoRepo) FindByEmail(ctx context.Context, email string) (*User, error) {
+	var user User
+	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}

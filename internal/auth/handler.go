@@ -3,7 +3,10 @@ package auth
 import (
 	"strings"
 
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -22,6 +25,8 @@ func (h *Handler) RegisterRoutes(r *gin.Engine) {
 	r.POST("/refresh", h.Refresh)
 	r.POST("/logout", h.Logout)
 	r.GET("/me/profile", h.Profile)
+	r.GET("/auth/google/login", h.GoogleLogin)
+	r.GET("/auth/google/callback", h.GoogleCallback)
 }
 
 func (h *Handler) Register(c *gin.Context) {
@@ -118,4 +123,27 @@ func (h *Handler) Profile(c *gin.Context) {
 	}
 
 	c.JSON(200, profile)
+}
+
+func (h *Handler) GoogleLogin(c *gin.Context) {
+	state := uuid.New().String()
+	url := h.service.GoogleLogin(state)
+	c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+func (h *Handler) GoogleCallback(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "code not provided"})
+		return
+	}
+
+	accessToken, refreshToken, err := h.service.GoogleCallback(code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	redirectURL := "http://127.0.0.1:5500/home?access=" + accessToken + "&refresh=" + refreshToken // Adjust the URL as needed
+	c.Redirect(http.StatusSeeOther, redirectURL)
 }
