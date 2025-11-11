@@ -144,6 +144,6 @@ func (h *Handler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	redirectURL := "http://127.0.0.1:5500/home?access=" + accessToken + "&refresh=" + refreshToken // Adjust the URL as needed
+	redirectURL := "http://127.0.0.1:5500/home.html?access=" + accessToken + "&refresh=" + refreshToken // Adjust the URL as needed
 	c.Redirect(http.StatusSeeOther, redirectURL)
 }
